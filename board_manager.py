@@ -12,6 +12,7 @@ class BoardManager:
         return [[color for j in range(cols)] for i in range(rows)]
 
     def __init__(self):
+        # print("Created...")
         self.board = {}
 
     def load_from_file(self, file):
@@ -20,6 +21,7 @@ class BoardManager:
 
     def save_to_file(self, file):
         with open(file, "wb") as f:
+            # print(self.board)
             pickle.dump(self.board, f)
     # 获取某群绘板
 

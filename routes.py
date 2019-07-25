@@ -1,6 +1,6 @@
 from main import app, socket
-from flask import session, request
-from global_objs import codes, last_send_time, make_response, config
+from flask import session, request, current_app
+from global_objs import codes, last_send_time, make_response, config, VARS
 import time
 import random
 import urllib
@@ -83,7 +83,9 @@ def paintboard_get_board_data():
     if group_id not in config.ENABLE_GROUPS:
         return make_response(False, {"message": "该群未启用绘板"})
     import json
-    from main import boards
+    # from main import boards
+    boards = current_app.boards
+    # boards = VARS["boards"]
     return make_response(True, boards.get_board(group_id))
 
 
@@ -108,7 +110,7 @@ def paintboard_draw():
         return make_response(False, {"message": "你尚未登录!"})
     user = session.get("qq_id")
     from global_objs import last_paint_time
-    from main import boards
+    # from main import boards
     import time
     if user in last_paint_time and time.time()-last_paint_time[user] < config.MIN_PAINT_INTERVAL:
         return make_response(False, {"message": "尚未到冷却时间"})
@@ -116,6 +118,9 @@ def paintboard_draw():
     x, y = int(request.form["x"]), int(request.form["y"])
     color = request.form["color"]
     group = request.form["group_id"]
+    # boards = VARS["boards"]
+
+    boards = current_app.boards
     boards.get_board(group)[x][y] = color
     from flask_socketio import emit
     emit("draw", {
