@@ -64,7 +64,7 @@ def paintboard_login():
 def paintboard_logout():
     if not session.get("qq_id", None):
         return make_response(False, {"message": "你尚未登录！"})
-    session.pop(session.get("qq_id"))
+    session.pop("qq_id")
     return make_response(True, {"message": "登出成功"})
 
 
