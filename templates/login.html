@@ -1,0 +1,85 @@
+{%extends "base.html"%}
+{%block title%}
+登录
+{%endblock%}
+{%block body%}
+<script>
+
+    $(document).ready(() => {
+        let vue = new Vue({
+            el: "#main",
+            delimiters: ['{[', ']}'],
+            data: {
+                errorMessage: "", successMessage: "", codeLoading: false,
+                qq: "",
+                code: ""
+            }, methods: {
+                login() {
+
+                    this.errorMessage = this.successMessage = "";
+                    if (this.qq == "" || this.code == "") {
+                        this.errorMessage = "请输入QQ号和验证码";
+                        return;
+                    }
+                    $.post("/api/login", { qq_id: vue.qq, code: vue.code }).done(ret => {
+                        ret = JSON.parse(ret);
+                        console.log(ret);
+                        if (!ret.ok) {
+                            vue.errorMessage = ret.result.message;
+                            showErrorModal(ret.result.message);
+                            return;
+                        }
+                        window.location.href = "/";
+                    })
+                }, getCode() {
+                    this.codeLoading = true;
+                    this.errorMessage = this.successMessage = "";
+                    $.post("/api/send_code", { qq_id: vue.qq }).done(ret => {
+                        ret = JSON.parse(ret);
+                        console.log(ret);
+                        vue.codeLoading = false;
+                        if (!ret.ok) {
+                            showErrorModal(ret.result.message);
+                            vue.errorMessage = ret.result.message;
+                            return;
+                        }
+                        vue.successMessage = "验证码发送成功";
+                    });
+                }
+            }
+        });
+    });
+
+</script>
+<div style="top:10%;max-width: 500px;">
+    <div class="ui left aligned container">
+        <div class="ui header">
+            <h1>Login</h1>
+        </div>
+        <div class="ui stack segment">
+            <div id="main" class="ui form" v-bind:class="{error:errorMessage!='',success:successMessage!=''}">
+                <div class="ui field">
+                    <label>QQ号:</label>
+                    <input type="text" placeholder="QQ号" v-model="qq">
+                </div>
+                <div class="field">
+                    <label>验证码</label>
+                    <input type="text" v-model="code" placeholder="验证码.." v-on:keyup.enter="login">
+                </div>
+                <div class="ui error message">
+                    <div class="header">错误</div>
+                    <p>{[errorMessage]}</p>
+                </div>
+                <div class="ui success message">
+                    <div class="header">完成</div>
+                    <p>{[successMessage]}</p>
+                </div>
+                <div class="ui green submit button" v-on:click="getCode" v-bind:class="{loading:codeLoading}">获取验证码
+                </div>
+
+                <div class="ui green submit button" v-on:click="login">登录</div>
+            </div>
+        </div>
+    </div>
+</div>
+{%endblock%}

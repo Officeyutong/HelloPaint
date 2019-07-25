@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>{%block title %}{%endblock%} - HelloPaint</title>
+    <!-- <script src="https://cdn.staticfile.org/jquery/3.3.1/jquery.min.js"></script> -->
+    {%if DEBUG%}
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.6.10/vue.js"></script>
+    <script src="https://cdn.bootcss.com/semantic-ui/2.4.1/semantic.js"></script>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/semantic-ui/2.4.1/semantic.css">
+
+    <script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.dev.js"></script>
+    {%else%}
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/semantic-ui/2.4.1/semantic.min.js"></script>
+    <link href="https://cdn.bootcss.com/semantic-ui/2.4.1/semantic.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
+    {%endif%}
+    {%if DEBUG%}
+    <script>
+        const debug_post = function (url, data) {
+            $.post(url, data).done(ctx => console.log(JSON.parse(ctx)));
+            // axios.post(url, data).then((ret) => {
+            //     console.log(JSON.parse(ret));
+            // });
+        }
+    </script>
+    {%endif%}
+    <script>
+
+        const showErrorModal = function (text, title = "错误") {
+            $("#global-error-header").text(title)
+            $("#global-error-text").html(text);
+            $("#global-error-model").modal("show");
+        };
+
+
+
+    </script>
+    {%block head%}{%endblock%}
+</head>
+
+<body style="background-color: rgb(236, 233, 233)">
+
+
+    <div class="ui main container" style="margin-top:70px;margin-bottom:70px">
+        {%block body%}{%endblock%}
+    </div>
+    <div class="ui center aligned  container">
+        <div style="color: darkgrey">
+            HelloPaint by MikuNotFoundException(<a href="https://gitee.com/yutong_java/HelloPaint">Gitee</a>)
+        </div>
+    </div>
+    <div class="ui tiny modal" id="global-error-model">
+        <div class="ui header">
+            发生错误
+        </div>
+        <div class="content">
+            <div class="ui error message">
+                <div class="ui header">
+                    <h3 id="global-error-header"></h3>
+                </div>
+                <p id="global-error-text"></p>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui green approve button">关闭</div>
+        </div>
+    </div>
+</body>
+
+</html>

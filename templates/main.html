@@ -1,0 +1,173 @@
+{%extends "base.html"%}
+{%block title%}
+HelloPaint
+{%endblock%}
+{%block body%}
+<script>
+    var vue, canvas, graphics, colorSelector;
+    var currentX, currentY;
+    var socket;
+    const SIZE_PER_PIXEL = 4;
+    const refill = function (data) {
+
+        for (let i = 0; i < data.length; i++) {
+            for (let j = 0; j < data[i].length; j++) {
+                graphics.fillStyle = data[i][j];
+                // console.log(data[i][j]);
+                graphics.fillRect(i * SIZE_PER_PIXEL, j * SIZE_PER_PIXEL, SIZE_PER_PIXEL, SIZE_PER_PIXEL);
+
+            }
+        }
+    };
+    const fillAt = function (x, y, color) {
+        vue.pixels[x][y] = color;
+        graphics.fillStyle = color;
+        console.log("Draw at ", x * SIZE_PER_PIXEL, y * SIZE_PER_PIXEL, SIZE_PER_PIXEL, SIZE_PER_PIXEL)
+        graphics.fillRect(x * SIZE_PER_PIXEL, y * SIZE_PER_PIXEL, SIZE_PER_PIXEL, SIZE_PER_PIXEL);
+
+    };
+    const drawAt = function (x, y, color) {
+        $.post("/api/draw", { x: x, y: y, color: color, group_id: vue.currentGroup }).done(ret => {
+            ret = JSON.parse(ret);
+            if (!ret.ok) {
+                showErrorModal(ret.result.message);
+                return;
+            }
+            fillAt(x, y, color);
+        });
+    };
+    $(document).ready(() => {
+
+        vue = new Vue({
+            el: "#main",
+            delimiters: ['{[', ']}'],
+            data: {
+                groups: [], currentGroup: "", done: false, loading: false, pixels: []
+            }, methods: {
+                switchGroup(target) {
+                    this.currentGroup = target;
+                    this.loading = true;
+                    $.post("/api/get_board_data", { group_id: vue.currentGroup }).done(ret => {
+                        ret = JSON.parse(ret);
+                        if (!ret.ok) {
+                            showErrorModal(ret.result.message);
+                            return;
+                        }
+                        $("#canvas").attr({
+                            height: ret.result[0].length * SIZE_PER_PIXEL,
+                            width: ret.result.length * SIZE_PER_PIXEL
+                        });
+                        vue.pixels = ret.result;
+                        vue.loading = false;
+                        console.log(ret);
+                        refill(ret.result);
+
+                    })
+                    if (socket) socket.close();
+                    socket = io.connect("/ws/paintboard");
+                    socket.emit("init", { group: this.currentGroup });
+                    socket.on("draw", data => {
+                        console.log("Updating...", data);
+                        fillAt(data.x, data.y, data.color);
+                    });
+                }
+            }
+        });
+        colorSelector = new Vue({
+            el: "#color-select", delimiters: ["{[", "]}"], data: {
+                currentColor: "#000000", commonColors: ['#ffffff', '#808000', '#ffff00', '#ff00ff', '#c0c0c0', '#00ffff', '#00ff00', '#ff0000', '#808080', '#0000ff', '#008000', '#800080', '#000000', '#000080', '#008080', '#800000'], isLogin: false
+            }
+        });
+        main = vue;
+        $.post("/api/get_enabled_groups").done(ret => {
+            ret = JSON.parse(ret);
+            vue.groups = ret.result;
+            if (!vue.groups) {
+                showErrorModal("绘板暂未启用！");
+                return;
+            }
+            vue.done = true;
+            vue.switchGroup(vue.groups[0]);
+        });
+        canvas = document.getElementById("canvas");
+        graphics = canvas.getContext("2d");
+        $("#canvas").mousemove((evt) => {
+            if (!evt.ctrlKey) return;
+            currentX = parseInt(evt.offsetX / SIZE_PER_PIXEL), currentY = parseInt(evt.offsetY / SIZE_PER_PIXEL);
+            $("#info-div").text(`当前X: ${currentX} 当前Y: ${currentY}`);
+            $("#color-div").text(`当前颜色: ${vue.pixels[currentX][currentY]}`)
+        }).mousedown(evt => {
+            if (!evt.ctrlKey) return;
+            currentX = parseInt(evt.offsetX / SIZE_PER_PIXEL), currentY = parseInt(evt.offsetY / SIZE_PER_PIXEL);
+            drawAt(currentX, currentY, colorSelector.currentColor);
+        });
+
+        $.post("/api/query_login_state").done(ret => {
+            ret = JSON.parse(ret);
+            colorSelector.isLogin = ret.result.isLogin;
+        });
+
+    });
+
+</script>
+<div style="top:10%;">
+    <div class="ui header">
+        <h1>HelloPaint V1</h1>
+    </div>
+    <div class="ui left aligned container">
+        <div class="ui one column grid">
+            <div class="ui  column" id="main" v-if="done">
+                <div class="ui header">
+                    <h4>选择QQ群</h4>
+                </div>
+                <div class="ui  pointing menu">
+                    <div class="ui inverted active dimmer" v-if="loading">
+                        <div class="ui loader"></div>
+                    </div>
+                    <a v-for="val in groups" class="ui item" v-bind:class="{active:val==currentGroup}"
+                        v-on:click="switchGroup(val)">
+                        <div class="ui header">
+                            <h4>{[val]}</h4>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="ui column">
+                <div class="ui segment stacked">
+                    <div class="ui two column grid">
+                        <div class="ui column">
+                            按住Ctrl键移动鼠标查看坐标和颜色。
+                            按住Ctrl并左键单击进行绘制。
+                            <div id="info-div"></div>
+                            <div id="color-div"></div>
+                        </div>
+                        <div class="ui column" id="color-select">
+                            <div v-if="isLogin">
+                                <div>请输入颜色:<input type="color" v-model="currentColor">
+                                    <div class="ui mini input">
+                                        <input type="text" v-model="currentColor">
+                                    </div>
+                                </div>
+                                <div>或者从常用颜色中选择:</div>
+                                <div class="ui mini circular button" v-for="item in commonColors"
+                                    v-bind:style="{'background-color':item}" v-on:click="currentColor=item"></div>
+                            </div>
+                            <div v-else>
+                                要画图请先<a href="/login">登录</a>！
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ui vertical divider"></div>
+                </div>
+            </div>
+
+            <div class="ui column">
+                <div class="ui segment stacked" style="min-height: 400px;">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{%endblock%}
