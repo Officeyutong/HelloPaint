@@ -60,7 +60,7 @@ def paintboard_login():
     return make_response(True, {"message": "登录成功"})
 
 
-@app.route("/api/logout", methods=["POST"])
+@app.route("/api/logout", methods=["POST", "GET"])
 def paintboard_logout():
     if not session.get("qq_id"):
         return make_response(False, {"message": "你尚未登录！"})
