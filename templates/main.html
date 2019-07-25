@@ -75,7 +75,7 @@ HelloPaint
         });
         colorSelector = new Vue({
             el: "#color-select", delimiters: ["{[", "]}"], data: {
-                QQID: "",
+                QQID: "", autoPaint: false,
                 currentColor: "#000000", commonColors: ['#ffffff', '#808000', '#ffff00', '#ff00ff', '#c0c0c0', '#00ffff', '#00ff00', '#ff0000', '#808080', '#0000ff', '#008000', '#800080', '#000000', '#000080', '#008080', '#800000'], isLogin: false
             }
         });
@@ -97,8 +97,8 @@ HelloPaint
             currentX = parseInt(evt.offsetX / SIZE_PER_PIXEL), currentY = parseInt(evt.offsetY / SIZE_PER_PIXEL);
             $("#info-div").text(`当前X: ${currentX} 当前Y: ${currentY}`);
             $("#color-div").text(`当前颜色: ${vue.pixels[currentX][currentY]}`)
-        }).mousedown(evt => {
-            if (!evt.ctrlKey) return;
+        }).click(evt => {
+            if (!evt.ctrlKey && !colorSelector.autoPaint) return;
             currentX = parseInt(evt.offsetX / SIZE_PER_PIXEL), currentY = parseInt(evt.offsetY / SIZE_PER_PIXEL);
             drawAt(currentX, currentY, colorSelector.currentColor);
         });
@@ -146,6 +146,10 @@ HelloPaint
                         <div class="ui column" id="color-select">
                             <div v-if="isLogin">
                                 您已经使用 {[QQID]} 登录.<a href="/api/logout">点此退出</a>.
+                                <div class="ui checkbox">
+                                    <input type="checkbox" v-model="autoPaint">
+                                    <label>自动绘制(无需按Ctrl键)</label>
+                                </div>
                                 <div>请输入颜色:<input type="color" v-model="currentColor">
                                     <div class="ui mini input">
                                         <input type="text" v-model="currentColor">
@@ -165,7 +169,8 @@ HelloPaint
             </div>
 
             <div class="ui column">
-                <div class="ui segment stacked" style="min-height: 400px;overflow-x: auto;overflow-y: auto;">
+                <div class="ui segment stacked"
+                    style="min-height: 400px;overflow-x: auto;overflow-y: auto;cursor: pointer;">
                     <canvas id="canvas"></canvas>
                 </div>
             </div>
