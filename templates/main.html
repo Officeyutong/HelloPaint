@@ -75,6 +75,7 @@ HelloPaint
         });
         colorSelector = new Vue({
             el: "#color-select", delimiters: ["{[", "]}"], data: {
+                QQID: "",
                 currentColor: "#000000", commonColors: ['#ffffff', '#808000', '#ffff00', '#ff00ff', '#c0c0c0', '#00ffff', '#00ff00', '#ff0000', '#808080', '#0000ff', '#008000', '#800080', '#000000', '#000080', '#008080', '#800000'], isLogin: false
             }
         });
@@ -105,6 +106,7 @@ HelloPaint
         $.post("/api/query_login_state").done(ret => {
             ret = JSON.parse(ret);
             colorSelector.isLogin = ret.result.isLogin;
+            colorSelector.QQID = ret.result.QQID;
         });
 
     });
@@ -143,6 +145,7 @@ HelloPaint
                         </div>
                         <div class="ui column" id="color-select">
                             <div v-if="isLogin">
+                                您已经使用 {[QQID]} 登录.<a href="/logout">点此退出</a>.
                                 <div>请输入颜色:<input type="color" v-model="currentColor">
                                     <div class="ui mini input">
                                         <input type="text" v-model="currentColor">
